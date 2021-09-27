@@ -1,0 +1,25 @@
+version: '2'
+
+services:
+
+  mumble_docker:
+    image: sudoforge/mumble-server:latest
+    restart: always
+    ports:
+      - 64738:64738/tcp
+      - 64738:64738/udp
+    environment:
+      #- LETSENCRYPT_TEST=true
+      - MUMBLE_SERVERPASSWORD="changeThisPassword"
+      - MUMBLE_ENABLE= 1
+      - VIRTUAL_HOST=mumble.benip.freemyip.com
+      - VIRTUAL_PORT=64738
+      - LETSENCRYPT_HOST=mumble.benip.freemyip.com
+    networks:
+      - nginx_reverse-proxy
+    restart: unless-stopped
+    
+
+networks:
+ nginx_reverse-proxy:
+    external: true

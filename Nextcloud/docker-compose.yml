@@ -1,0 +1,75 @@
+version: '3.3'
+
+volumes:
+  db:
+  datos_nextcloud:
+
+secrets:
+  root_password:
+    file: ./root_password.txt
+  sql_password:
+    file: ./sql_password.txt
+  admin_nextcloud_user:
+    file: ./admin_nextcloud_user.txt
+  admin_nextcloud_password:
+    file: ./admin_nextcloud_password.txt
+
+services:
+
+  mariadb:
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: unless-stopped
+    volumes:
+      - db:/var/lib/mysql
+      - ${PWD}/config.php /var/www/html/config/config.php
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=sql_password
+    secrets:
+      - root_password
+      - sql_password
+    ports:
+      - "3306"
+    expose:
+      - 3306 
+    #networks:
+    #  - nginx_reverse-proxy
+  
+  nextcloud_docker:
+    build: .
+    restart: unless-stopped
+    ports:
+      - 8001:80
+    environment:
+      #- LETSENCRYPT_TEST=true
+      - VIRTUAL_HOST=cloud.benip.freemyip.com
+      - VIRTUAL_PORT=8001
+      - LETSENCRYPT_HOST=cloud.benip.freemyip.com     
+      - NEXTCLOUD_TRUSTED_DOMAINS=cloud.benip.freemyip.com
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=sql_password
+      - MYSQL_HOST=mariadb
+      - NEXTCLOUD_UPDATE=1
+      - NEXTCLOUD_ADMIN_USER=user #change this in real service
+      - NEXTCLOUD_ADMIN_PASSWORD=pass #change this in real service
+    links:
+      - mariadb
+    volumes:
+      - /media/particion_nextcloud:/nextcloud_data
+      - datos_nextcloud:/var/www/html/
+    depends_on:
+      - mariadb
+    secrets:
+      - sql_password
+      - admin_nextcloud_user
+      - admin_nextcloud_password
+    #networks:
+    #  - nginx_reverse-proxy
+
+#networks:
+#  nginx_reverse-proxy:
+#    external: true
